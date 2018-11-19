@@ -1,0 +1,101 @@
+float i1, i2, r_sensor, l_sensor;
+int speed_right = 0; 
+int speed_left = 0; 
+int in1 = 0; 
+int in2 = 0;
+int in3 = 0;
+int in4 = 0;
+
+void setup() {
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
+  pinMode(3, OUTPUT);
+  pinMode(5, OUTPUT);
+  pinMode(8, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
+  pinMode(11, OUTPUT);
+   
+  Serial.begin(9600);
+
+  speed_right = 247; /* right motor */
+  speed_left = 255; /* left motor */
+}
+
+/* **********************************
+ *  Directional driving functions
+ *  
+ *  in1 & in2 = 0 or 1 -- stopped
+ *  in1 = 1 and in2 = 0 -- forward
+ * **********************************
+ */
+void halt() {
+  while (speed_right > 0 || speed_left > 0) {
+    speed_right--;
+    speed_left--;
+    if (speed_right < 0) speed_right = 0;
+    if (speed_left < 0) speed_left = 0;
+    delay(20);
+  }
+
+
+  /*speed_right = 0;
+  speed_left = 0;
+  in1 = 0; in2 = 0; in3 = 0; in4 = 0; */
+
+}
+
+void left() {
+  speed_right = 247;
+  speed_left = 0;
+  in1 = 0; in2 = 1; in3 = 0; in4 = 1;
+}
+
+void right() {
+  speed_right = 0;
+  speed_left = 255;
+  in1 = 0; in2 = 1; in3 = 0; in4 = 1;
+}
+
+void forward() {
+  speed_right = 247;
+  speed_left = 255;
+  in1 = 0; in2 = 1; in3 = 0; in4 = 1;
+}
+/* ********************************** */
+
+void loop() {
+
+  /*
+   * Analog reading code
+   * Outputs a float between 0.30 and 5.00
+   * r_sensor is the right sensor
+   * l_sensor is the left sensor
+   */
+  i1 = analogRead(A0);  /* read data from sonar sensors */
+  r_sensor = i1 / 200;        /* convert data to distance meters */
+  i2 = analogRead(A1);
+  l_sensor = i2 / 200;
+
+  /* Determine where any objects are */
+  if (r_sensor < 1.0 && l_sensor < 1.0) /* both sensors see something within 1.0 meters */
+    halt();
+  else if (r_sensor < 1 && l_sensor > 1)
+    left();
+  else if (r_sensor > 1 && l_sensor < 1)
+    right();
+  else
+    forward();
+
+  analogWrite(3, speed_left); /* write duty cycle to MC enable pins */
+  analogWrite(5, speed_right);
+  digitalWrite(8, in1);   /* write enable (forward/back/off) to MC input pins */
+  digitalWrite(9, in2);
+  digitalWrite(10, in3);
+  digitalWrite(11, in4);
+
+  Serial.print(l_sensor); Serial.print("\t"); Serial.println(r_sensor); /* Print data */
+  
+  delay(100);
+
+}
